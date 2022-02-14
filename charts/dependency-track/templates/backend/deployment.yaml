@@ -39,20 +39,34 @@ spec:
         env:
         - name: ALPINE_DATA_DIRECTORY
           value: "/data"
-        {{- if .Values.postgresql.enabled }}
+        {{- if eq .Values.database.internal.enabled true }}
         - name: ALPINE_DATABASE_MODE
           value: "external"
         - name: ALPINE_DATABASE_DRIVER
           value: "org.postgresql.Driver"
         - name: ALPINE_DATABASE_URL
-          value: jdbc:postgresql://{{ .Release.Name }}-postgresql/{{ .Values.postgresql.postgresqlDatabase }}
+          value: jdbc:postgresql://{{ .Release.Name }}-postgresql/{{ .Values.database.internal.postgresql.database }}
         - name: ALPINE_DATABASE_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ .Release.Name }}-postgresql
               key: postgresql-password
         - name: ALPINE_DATABASE_USERNAME
-          value: {{ .Values.postgresql.postgresqlUsername }}
+          value: {{ .Values.database.internal.postgresql.username }}
+        {{- else if eq .Values.database.external.enabled true }}
+        - name: ALPINE_DATABASE_MODE
+          value: {{ .Values.database.external.databaseMode}}
+        - name: ALPINE_DATABASE_DRIVER
+          value: {{ .Values.database.external.databaseDriver}}
+        - name: ALPINE_DATABASE_URL
+          value: {{ .Values.database.external.databaseURL}}
+        - name: ALPINE_DATABASE_USERNAME
+          value: {{ .Values.database.external.databaseUsername }}
+        - name: ALPINE_DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.database.external.databaseUserPassword.secretName }}
+              key: {{ .Values.database.external.databaseUserPassword.secretKey }}
         {{- end }}
         {{- with .Values.apiserver.env }}
         {{- toYaml . | nindent 8 }}
@@ -77,7 +91,7 @@ spec:
           successThreshold: {{ .Values.apiserver.livenessProbe.successThreshold }}
           failureThreshold: {{ .Values.apiserver.livenessProbe.failureThreshold }}
         {{- end }}
-        {{- if .Values.apiserver.readinessProbe.enabled }}
+        {{- if .Values.apiserver.livenessProbe.enabled }}
         readinessProbe:
           httpGet:
             port: api
@@ -88,6 +102,7 @@ spec:
           successThreshold: {{ .Values.apiserver.readinessProbe.successThreshold }}
           failureThreshold: {{ .Values.apiserver.readinessProbe.failureThreshold }}
         {{- end }}
+      {{- end }}
       {{- with .Values.apiserver.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
