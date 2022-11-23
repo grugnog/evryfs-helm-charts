@@ -102,7 +102,6 @@ spec:
           successThreshold: {{ .Values.apiserver.readinessProbe.successThreshold }}
           failureThreshold: {{ .Values.apiserver.readinessProbe.failureThreshold }}
         {{- end }}
-      {{- end }}
       {{- with .Values.apiserver.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
